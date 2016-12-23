@@ -7,9 +7,9 @@ import struct
 
 class Idler (threading.Thread):
 	def __init__(self, username="c666", host="127.0.0.1", port = 25565):
-		print(username)
 		threading.Thread.__init__(self)
 		self.connection=Connection(host=host,port=port,username=username)
+		self.stop=False
 	def run(self):
 		self.connection.connect()
 		self.connection.login()
@@ -18,6 +18,8 @@ class Idler (threading.Thread):
 			if (pid==0x1F): #keepalive packet id
 				keepAliveID=data[2:]
 				self.connection._send_package(("byte",0x0B),("bin",keepAliveID))
+			if (self.stop):
+				break
 
 
 class Attacker (threading.Thread):
@@ -39,9 +41,10 @@ class Attacker (threading.Thread):
 				t_id=data[35:]
 				self.connection._send_package(("byte",0x00),("bin",t_id))
 
-
-worker1 = Attacker(username="c666")
-worker1.start()
-while 1:
-	sleep(1.0)
-
+def main():
+	worker1 = Attacker(username="c666")
+	worker1.start()
+	while 1:
+		sleep(1.0)
+if __name__ == "__main__":
+	main()

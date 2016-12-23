@@ -63,12 +63,18 @@ def auth(req, username="", passwd=""):
 		util.redirect(req,'.')
 		return 
 	else:
-		if passwd:
-			attempt = True
 		sess['salt'] = ("%0.4X" % randint(0,256*256-1))+("%0.4X" % randint(0,256*256-1))
 		sess.save()
-	return tools.login_page(sess['salt'], fail=attempt)
+	if passwd:
+		attempt = True
+	return tools.login_page(sess['salt'], fail=attempt,perm_salt=cred.salt,username=username)
 
+def logout(req):
+	sess = Session.Session(req)
+	sess['logged']=0
+	sess.save()
+	util.redirect(req,'.')
+	return
 
 def style(req):
 	req.content_type = 'text/css'
@@ -87,6 +93,7 @@ table {
 th {
 	height: 0.8cm;
 	font-weight: bold;
+	background-color: #CCC;
 	line-height: 0.8cm;
 }
 td {

@@ -90,3 +90,6 @@ ENV/
 
 #credentials
 cred.py
+
+#vim
+*.swp

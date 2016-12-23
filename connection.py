@@ -10,6 +10,7 @@ class Connection:
 		self._port = port
 		self._connected = 0
 		self._compression = 0
+		self._username = username 
 	def connect(self):
 		if self._connected == 1:
 			self._connection.close()
@@ -18,6 +19,10 @@ class Connection:
 		self._connection.connect((self._host,self._port))
 		self._connection.settimeout(5.0)
 		self._comperssion = 0
+	def login(self):
+		self._send_package(("byte",0),("varint",210),("string","localhost"),("short",25565),("byte",2)) #initial handshake
+		self._send_package(("byte",0),("string",self._username)) #login
+		
 	def _write_string(self,string):
 		return m_utility.varInt(len(string.encode()))+string.encode()
 	def _send_package(self, *args):
@@ -41,7 +46,6 @@ class Connection:
 			self._connection.send(m_utility.varInt(len(data))+data)
 		else:
 			data = b'\x00'+data
-			print((m_utility.varInt(len(data))+data).hex())
 			self._connection.send(m_utility.varInt(len(data))+data)
 	def _get_varInt(self):
 		res = 0
@@ -83,31 +87,22 @@ class Connection:
 			else:
 				pack_id = 0x99
 		return (pack_id, data)
+def main():
+	client = Connection()
+	client.connect()
+	client.login()
+	
+	
+	
+	while (1):
+		(pid,data)=client.get_package()
+		if (pid != 0):
+			print(('%02x : '%pid)+data[0:32].hex())
+		if (pid==0x1F): #keepalive packet id
+			print("KEEPALIVE")
+			keepAliveID=data[2:]
+			print(keepAliveID)
+			client._send_package(("byte",0x0B),("bin",keepAliveID))
 
-client = Connection()
-client.connect()
-
-client._send_package(("byte",0),("varint",210),("string","localhost"),("short",25565),("byte",2)) #initial handshake
-client._send_package(("byte",0),("string","c666")) #login
-
-
-
-while (1):
-	(pid,data)=client.get_package()
-	if (pid != 0):
-		print(('%02x : '%pid)+data[0:32].hex())
-	if (pid==0x1F): #keepalive packet id
-		print("KEEPALIVE")
-		keepAliveID=data[2:]
-		print(keepAliveID)
-		client._send_package(("byte",0x0B),("bin",keepAliveID))
-
-
-"""
-packet = '0600010063DD01'
-p_tosend = codecs.decode(packet, 'hex_codec')
-print(p_tosend)
-s.send(p_tosend)
-s.send(b'\x01\x00')
-print(s.recv(1024))
-"""
+if __name__ == "__main__":
+	main()
